@@ -95,7 +95,7 @@ class ResizeAndJpegEncode(TfdsModFunction):
         def resize_image_fn(step):
             # resize images
             for key in step["observation"]:
-                if len(step["observation"][key].shape) > 2 and (
+                if len(step["observation"][key].shape) >= 2 and (
                     step["observation"][key].shape[0] > ResizeAndJpegEncode.MAX_RES
                     or step["observation"][key].shape[1] > ResizeAndJpegEncode.MAX_RES
                 ):
