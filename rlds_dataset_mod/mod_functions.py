@@ -53,7 +53,7 @@ def mod_obs_features(features, obs_feature_mod_function):
 
 
 class ResizeAndJpegEncode(TfdsModFunction):
-    MAX_RES: int = 336
+    MAX_RES: int = 256
 
     @staticmethod
     def mod_features(
@@ -61,16 +61,14 @@ class ResizeAndJpegEncode(TfdsModFunction):
     ) -> tfds.features.FeaturesDict:
         def downsize_and_jpeg(key, feat):
             """Downsizes image features, encodes as jpeg."""
-            if len(feat.shape) >= 2 and feat.shape[0] >= 64:  # is image / depth feature
-                size_h = min(feat.shape[0], ResizeAndJpegEncode.MAX_RES)
-                size_w = min(feat.shape[1], ResizeAndJpegEncode.MAX_RES)
+            if len(feat.shape) >= 2 and feat.shape[0] >= 64 and feat.shape[1] >= 64:  # is image / depth feature
                 should_jpeg_encode = (
                     isinstance(feat, tfds.features.Image) and "depth" not in key
                 )
                 if len(feat.shape) > 2:
-                    new_shape = (size_h, size_w, feat.shape[2])
+                    new_shape = (ResizeAndJpegEncode.MAX_RES, ResizeAndJpegEncode.MAX_RES, feat.shape[2])
                 else:
-                    new_shape = (size_h, size_w)
+                    new_shape = (ResizeAndJpegEncode.MAX_RES, ResizeAndJpegEncode.MAX_RES)
 
                 if isinstance(feat, tfds.features.Image):
                     return tfds.features.Image(
@@ -95,20 +93,12 @@ class ResizeAndJpegEncode(TfdsModFunction):
         def resize_image_fn(step):
             # resize images
             for key in step["observation"]:
-                if len(step["observation"][key].shape) > 2 and (
-                    step["observation"][key].shape[0] > ResizeAndJpegEncode.MAX_RES
-                    or step["observation"][key].shape[1] > ResizeAndJpegEncode.MAX_RES
+                if len(step["observation"][key].shape) >= 2 and (
+                    step["observation"][key].shape[0] >= 64
+                    or step["observation"][key].shape[1] >= 64
                 ):
-                    size = (
-                        min(
-                            step["observation"][key].shape[0],
-                            ResizeAndJpegEncode.MAX_RES,
-                        ),
-                        min(
-                            step["observation"][key].shape[1],
-                            ResizeAndJpegEncode.MAX_RES,
-                        ),
-                    )
+                    size = (ResizeAndJpegEncode.MAX_RES,
+                            ResizeAndJpegEncode.MAX_RES)
                     if "depth" in key:
                         step["observation"][key] = tf.cast(
                             dl.utils.resize_depth_image(
@@ -142,7 +132,54 @@ class FilterSuccess(TfdsModFunction):
         return ds.filter(lambda e: e["success"])
 
 
+class FlipImgChannels(TfdsModFunction):
+    @staticmethod
+    def mod_features(
+            features: tfds.features.FeaturesDict,
+    ) -> tfds.features.FeaturesDict:
+        return features  # no feature changes
+
+    @staticmethod
+    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
+        def flip(step):
+            step["observation"]["image"] = step["observation"]["image"][..., ::-1]
+            return step
+
+        def episode_map_fn(episode):
+            episode["steps"] = episode["steps"].map(flip)
+            return episode
+
+        return ds.map(episode_map_fn)
+    
+
+class FlipWristImgChannels(TfdsModFunction):
+    @staticmethod
+    def mod_features(
+            features: tfds.features.FeaturesDict,
+    ) -> tfds.features.FeaturesDict:
+        return features  # no feature changes
+
+    @staticmethod
+    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
+        def flip(step):
+            if "wrist_image" in step["observation"]:
+                step["observation"]["wrist_image"] = step["observation"]["wrist_image"][..., ::-1]
+            else:
+                step["observation"]["hand_image"] = step["observation"]["hand_image"][..., ::-1]
+            return step
+
+        def episode_map_fn(episode):
+            episode["steps"] = episode["steps"].map(flip)
+            return episode
+
+        return ds.map(episode_map_fn)
+
+
 TFDS_MOD_FUNCTIONS = {
     "resize_and_jpeg_encode": ResizeAndJpegEncode,
     "filter_success": FilterSuccess,
+    "flip_image_channels": FlipImgChannels,
+    "flip_wrist_image_channels": FlipWristImgChannels,
 }
+
+
