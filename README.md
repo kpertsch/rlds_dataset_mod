@@ -65,6 +65,11 @@ and one map function that modifies an input `tf.data.Dataset`. You can use the e
 Make sure to register your new mod in the `TFDS_MOD_FUNCTIONS` object.
 
 
+## Download Open X-Embodiment Dataset
+To download the Open X-Embodiment dataset and convert it for training, run `bash prepare_open_x.sh`. You can
+specify the download directory at the top of the script.
+
+
 ## FAQ / Troubleshooting
 
 - **No new tempfile could be created**: The script stores large datasets in intermediate temporary files in the 

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 import dlimp as dl
 import tensorflow as tf
@@ -7,9 +6,10 @@ import tensorflow_datasets as tfds
 
 
 class TfdsModFunction(ABC):
-    @staticmethod
+    @classmethod
     @abstractmethod
     def mod_features(
+        cls,
         features: tfds.features.FeaturesDict,
     ) -> tfds.features.FeaturesDict:
         """
@@ -17,9 +17,9 @@ class TfdsModFunction(ABC):
         """
         ...
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
+    def mod_dataset(cls, ds: tf.data.Dataset) -> tf.data.Dataset:
         """
         Perform arbitrary modifications on the dataset that comply with the modified feature definition.
         """
@@ -55,8 +55,9 @@ def mod_obs_features(features, obs_feature_mod_function):
 class ResizeAndJpegEncode(TfdsModFunction):
     MAX_RES: int = 256
 
-    @staticmethod
+    @classmethod
     def mod_features(
+        cls,
         features: tfds.features.FeaturesDict,
     ) -> tfds.features.FeaturesDict:
         def downsize_and_jpeg(key, feat):
@@ -88,8 +89,8 @@ class ResizeAndJpegEncode(TfdsModFunction):
 
         return mod_obs_features(features, downsize_and_jpeg)
 
-    @staticmethod
-    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
+    @classmethod
+    def mod_dataset(cls, ds: tf.data.Dataset) -> tf.data.Dataset:
         def resize_image_fn(step):
             # resize images
             for key in step["observation"]:
@@ -121,28 +122,34 @@ class ResizeAndJpegEncode(TfdsModFunction):
 
 
 class FilterSuccess(TfdsModFunction):
-    @staticmethod
+    @classmethod
     def mod_features(
+        cls,
         features: tfds.features.FeaturesDict,
     ) -> tfds.features.FeaturesDict:
         return features  # no feature changes
 
-    @staticmethod
-    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
+    @classmethod
+    def mod_dataset(cls, ds: tf.data.Dataset) -> tf.data.Dataset:
         return ds.filter(lambda e: e["success"])
 
 
 class FlipImgChannels(TfdsModFunction):
-    @staticmethod
+    FLIP_KEYS = ["image"]
+
+    @classmethod
     def mod_features(
-            features: tfds.features.FeaturesDict,
+        cls,
+        features: tfds.features.FeaturesDict,
     ) -> tfds.features.FeaturesDict:
         return features  # no feature changes
 
-    @staticmethod
-    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
+    @classmethod
+    def mod_dataset(cls, ds: tf.data.Dataset) -> tf.data.Dataset:
         def flip(step):
-            step["observation"]["image"] = step["observation"]["image"][..., ::-1]
+            for key in cls.FLIP_KEYS:
+                if key in step["observation"]:
+                    step["observation"][key] = step["observation"][key][..., ::-1]
             return step
 
         def episode_map_fn(episode):
@@ -152,27 +159,8 @@ class FlipImgChannels(TfdsModFunction):
         return ds.map(episode_map_fn)
     
 
-class FlipWristImgChannels(TfdsModFunction):
-    @staticmethod
-    def mod_features(
-            features: tfds.features.FeaturesDict,
-    ) -> tfds.features.FeaturesDict:
-        return features  # no feature changes
-
-    @staticmethod
-    def mod_dataset(ds: tf.data.Dataset) -> tf.data.Dataset:
-        def flip(step):
-            if "wrist_image" in step["observation"]:
-                step["observation"]["wrist_image"] = step["observation"]["wrist_image"][..., ::-1]
-            else:
-                step["observation"]["hand_image"] = step["observation"]["hand_image"][..., ::-1]
-            return step
-
-        def episode_map_fn(episode):
-            episode["steps"] = episode["steps"].map(flip)
-            return episode
-
-        return ds.map(episode_map_fn)
+class FlipWristImgChannels(FlipImgChannels):
+    FLIP_KEYS = ["wrist_image", "hand_image"]
 
 
 TFDS_MOD_FUNCTIONS = {
