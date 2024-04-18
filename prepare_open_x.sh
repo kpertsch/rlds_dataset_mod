@@ -43,7 +43,7 @@ DATASET_TRANSFORMS=(
     "ucsd_kitchen_dataset_converted_externally_to_rlds 0.1.0 resize_and_jpeg_encode"
     "austin_sailor_dataset_converted_externally_to_rlds 0.1.0 resize_and_jpeg_encode"
     "austin_sirius_dataset_converted_externally_to_rlds 0.1.0 resize_and_jpeg_encode"
-    "bc_z 1.0.0 resize_and_jpeg_encode"
+    "bc_z 0.1.0 resize_and_jpeg_encode"
     "dlr_edan_shared_control_converted_externally_to_rlds 0.1.0 resize_and_jpeg_encode"
     "iamlab_cmu_pickup_insert_converted_externally_to_rlds 0.1.0 resize_and_jpeg_encode"
     "utaustin_mutex 0.1.0 resize_and_jpeg_encode,flip_wrist_image_channels,flip_image_channels"
