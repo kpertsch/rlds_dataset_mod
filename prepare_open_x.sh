@@ -22,10 +22,13 @@ MAX_EPISODES_IN_MEMORY=200    # number of episodes converted in parallel --> adj
 # in /tmp to store dataset during conversion
 ulimit -n 20000
 
+echo "!!! Warning: This script downloads the Bridge dataset from the Open X-Embodiment bucket, which is currently outdated !!!"
+echo "!!! Instead download the bridge_dataset from here: https://rail.eecs.berkeley.edu/datasets/bridge_release/data/tfds/ !!!"
+
 # format: [dataset_name, dataset_version, transforms]
 DATASET_TRANSFORMS=(
     "fractal20220817_data 0.1.0 resize_and_jpeg_encode"
-    "bridge 0.1.0 resize_and_jpeg_encode"
+    "bridge 0.1.0 resize_and_jpeg_encode"  
     "kuka 0.1.0 resize_and_jpeg_encode,filter_success"
     "taco_play 0.1.0 resize_and_jpeg_encode"
     "jaco_play 0.1.0 resize_and_jpeg_encode"
