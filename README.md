@@ -20,6 +20,9 @@ conda activate rlds_env
 
 If you want to manually create an environment, the key packages to install are `tensorflow` and `tensorflow_datasets`.
 
+To download datasets from the [Open X-Embodiment Dataset](https://robotics-transformer-x.github.io/) Google cloud bucket, 
+please install `gsutil` using the [installation instructions](https://cloud.google.com/storage/docs/gsutil_install).
+
 
 ## Modifying RLDS Datasets
 
